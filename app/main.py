@@ -9,7 +9,7 @@ def main():
             command = input().strip()
 
             if command:
-                print(f"{command}: command not found\n")
+                print(f"{command}: command not found")
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
             break
