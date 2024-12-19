@@ -5,8 +5,13 @@ command_history = []
 def main():
     while True:
         sys.stdout.write("$ ")
+        sys.stdout.flush()
         command = input()
         command_history.append(command)
+
+        if not command.strip():
+            continue
+        
         print(f"{command}: command not found\n")
 
 
