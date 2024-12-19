@@ -1,11 +1,13 @@
 import sys
 
+command_history = []
 
 def main():
-    sys.stdout.write("$ ")
-
-    command = input()
-    print(f"{command}: command not found\n")
+    while True:
+        sys.stdout.write("$ ")
+        command = input()
+        command_history.append(command)
+        print(f"{command}: command not found\n")
 
 
 if __name__ == "__main__":
