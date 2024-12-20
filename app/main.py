@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 
 
 BUILTIN_COMMANDS = {"exit", "echo", "type"}
@@ -41,6 +42,21 @@ def execute_echo(command):
     command, _, message = command.partition(" ")
     print(message)
 
+def execute_external_program(command):
+    args = command.split()
+    program = args[0]
+    executable_path = check_path(program)
+
+    if executable_path:
+        try:
+            result = subprocess.run(args, check=True, text=True, capture_output=True)
+            print(result.stdout, end='')
+        except subprocess.CalledProcessError as e:
+            print(e.stderr, end='')
+    
+    else:
+        print(f"{program}: command not found")
+
 def main():
     while True:
         try:
@@ -58,7 +74,8 @@ def main():
                 execute_type(command=command)
 
             else:
-                print(f"{command}: command not found")
+                execute_external_program(command=command)
+            
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
             sys.exit(0)
