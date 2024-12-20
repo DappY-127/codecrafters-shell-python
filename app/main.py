@@ -17,7 +17,11 @@ def main():
                     print("exit: numeric argument required")
                     sys.exit(0)
 
-            if command:
+            elif command.startswith('echo'):
+                command, _, message = command.partition(" ")
+                print(message)
+
+            else:
                 print(f"{command}: command not found")
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
