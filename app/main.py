@@ -3,7 +3,7 @@ import os
 import subprocess
 
 
-BUILTIN_COMMANDS = {"exit", "echo", "type"}
+BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd"}
 
 def check_path(command_name):
     paths = os.getenv("PATH", "").split(":")
@@ -57,6 +57,10 @@ def execute_external_program(command):
     else:
         print(f"{program}: command not found")
 
+def execute_pwd():
+    working_directory = os.getcwd()
+    print(working_directory)
+
 def main():
     while True:
         try:
@@ -72,6 +76,9 @@ def main():
 
             elif command.startswith('type'):
                 execute_type(command=command)
+
+            elif command.startswith('pwd'):
+                execute_pwd()
 
             else:
                 execute_external_program(command=command)
