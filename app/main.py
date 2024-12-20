@@ -27,11 +27,15 @@ def execute_type(command):
         print("type: argument required")
         return
 
-    for command_name in command_name.split():
-        if command_name in BUILTIN_COMMANDS:
-            print(f'{command_name} is a shell builtin')
+    for name in command_name.split():
+        if name in BUILTIN_COMMANDS:
+            print(f'{name} is a shell builtin')
         else:
-            print(f'{command_name}: not found')
+            execution_path = check_path(name)
+            if execution_path:
+                print(f'{name} is {execution_path}')
+            else:
+                print(f'{name}: not found')
 
 def execute_echo(command):
     command, _, message = command.partition(" ")
