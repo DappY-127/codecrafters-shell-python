@@ -1,9 +1,10 @@
 import sys
 import os
 import subprocess
+import shlex
 
 
-BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd"}
+BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd", "cat"}
 
 def check_path(command_name):
     paths = os.getenv("PATH", "").split(":")
@@ -40,7 +41,32 @@ def execute_type(command):
 
 def execute_echo(command):
     command, _, message = command.partition(" ")
-    print(message)
+    if not message.strip():
+        print("")
+        return
+    
+    try:
+        parsed_message = shlex.split(message)
+        print("".join(parsed_message))
+    except ValueError as e:
+        print(f"{command}: {str(e)}")
+
+def execute_cat(command):
+    command, _, args = command.partition(" ")
+    if not args.strip():
+        print("cat: missing arguments")
+        return
+    
+    try:
+        parsed_args = shlex.split(args)
+        for filename in parsed_args:
+            try:
+                with open(filename, 'r') as file:
+                    print(file.read(), end="")
+            except FileNotFoundError:
+                print(f"cat: {filename}: No such file or directory")
+    except ValueError as e:
+        print(f"cat: {str(e)}")
 
 def execute_external_program(command):
     args = command.split()
@@ -109,6 +135,9 @@ def main():
 
             elif command.startswith('cd'):
                 execute_cd(command=command)
+
+            elif command.startswith('cat'):
+                execute_cat(command=command)
 
             else:
                 execute_external_program(command=command)
