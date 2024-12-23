@@ -5,7 +5,7 @@ import shlex
 import re
 
 
-BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd", "cat"}
+BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd"}
 
 def check_path(command_name):
     paths = os.getenv("PATH", "").split(":")
