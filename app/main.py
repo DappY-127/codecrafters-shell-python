@@ -67,6 +67,13 @@ def execute_cd(command):
     if not directory:
         print(f"{command}: argument required")
         return
+    
+    if directory.startwith("~"):
+        home_dir = os.getenv("HOME")
+        if not home_dir:
+            print(f"{command}: HOME environment variable is not set")
+            return
+        directory = directory.replace("~", home_dir, 1)
 
     if os.path.isabs(directory):
         new_path = directory
