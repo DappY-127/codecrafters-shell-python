@@ -65,12 +65,13 @@ def execute_cd(command):
     command, _, directory = command.partition(" ")
     directory = directory.strip()
     if not directory:
-        print("cd: argument required")
+        print(f"{command}: argument required")
         return
 
-    if not os.path.isabs(directory):
-        print("cd: only absolute paths are supported")
-        return
+    if os.path.isabs(directory):
+        new_path = directory
+    else:
+        new_path = os.path.join(os.getcwd(), directory)
 
     if os.path.isdir(directory):
         try:
@@ -78,7 +79,7 @@ def execute_cd(command):
         except PermissionError:
             print(f"{command}: {directory}: Permission denied")
     else:
-        print(f'{command}: {directory}: No such file or directory') #cd: /does_not_exist: No such file or directory
+        print(f'{command}: {directory}: No such file or directory')
 
 def main():
     while True:
