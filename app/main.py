@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 import shlex
+import re
 
 
 BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd", "cat"}
@@ -45,11 +46,19 @@ def execute_echo(command):
         print("")
         return
     
-    try:
-        parsed_message = shlex.split(message)
-        print("".join(parsed_message))
-    except ValueError as e:
-        print(f"{command}: {str(e)}")
+    pattern = r"'([^']*)'|\"([^\"]*)\"|(\S+)"
+    matches = re.findall(pattern, message)
+
+    result = []
+    for single_quote, double_quote, unquoted in matches:
+        if single_quote:
+            result.append(single_quote)
+        elif double_quote:
+            result.append(double_quote)
+        elif unquoted:
+            result.append(unquoted)
+
+    print(" ".join(result))
 
 def execute_cat(command):
     command, _, args = command.partition(" ")
