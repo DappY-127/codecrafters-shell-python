@@ -3,7 +3,7 @@ import os
 import subprocess
 
 
-BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd"}
+BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd"}
 
 def check_path(command_name):
     paths = os.getenv("PATH", "").split(":")
@@ -61,6 +61,25 @@ def execute_pwd():
     working_directory = os.getcwd()
     print(working_directory)
 
+def execute_cd(command):
+    command, _, directory = command.partition(" ")
+    directory = directory.strip()
+    if not directory:
+        print("cd: argument required")
+        return
+
+    if not os.path.isabs(directory):
+        print("cd: only absolute paths are supported")
+        return
+
+    if os.path.isdir(directory):
+        try:
+            os.chdir(directory)
+        except PermissionError:
+            print(f"{command}: {directory}: Permission denied")
+    else:
+        print(f'{command}: {directory}: No such file or directory') #cd: /does_not_exist: No such file or directory
+
 def main():
     while True:
         try:
@@ -79,6 +98,9 @@ def main():
 
             elif command.startswith('pwd'):
                 execute_pwd()
+
+            elif command.startswith('cd'):
+                execute_cd(command=command)
 
             else:
                 execute_external_program(command=command)
