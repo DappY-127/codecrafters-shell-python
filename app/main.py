@@ -46,6 +46,7 @@ def execute_echo(command):
         print("")
         return
     
+    message = re.sub(r"\\ ", " ", message)
     pattern = r"'([^']*)'|\"([^\"]*)\"|(\S+)"
     matches = re.findall(pattern, message)
 
@@ -54,29 +55,9 @@ def execute_echo(command):
         if single_quote:
             result.append(single_quote)
         elif double_quote:
-            processed = []
-            i = 0
-            while i < len(double_quote):
-                if double_quote[i] == "\\" and i + 1 < len(double_quote):
-                    processed.append(double_quote[i]) 
-                    processed.append(double_quote[i + 1]) 
-                    i += 2  
-                else:
-                    processed.append(double_quote[i])
-                    i += 1
-            result.append("".join(processed))
+            result.append(double_quote)
         elif unquoted:
-            processed = []
-            i = 0
-            while i < len(unquoted):
-                if unquoted[i] == "\\" and i + 1 < len(unquoted):
-                    processed.append(unquoted[i]) 
-                    processed.append(unquoted[i + 1])
-                    i += 2 
-                else:
-                    processed.append(unquoted[i])
-                    i += 1
-            result.append("".join(processed))
+            result.append(unquoted)
 
     print(" ".join(result))
 
