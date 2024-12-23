@@ -54,9 +54,29 @@ def execute_echo(command):
         if single_quote:
             result.append(single_quote)
         elif double_quote:
-            result.append(double_quote)
+            processed = []
+            escaping = False
+            for char in double_quote:
+                if escaping:
+                    processed.append(char)
+                    escaping = False
+                elif char == "\\":
+                    escaping = True
+                else:
+                    processed.append(char)
+            result.append("".join(processed))
         elif unquoted:
-            result.append(unquoted)
+            processed = []
+            escaping = False
+            for char in unquoted:
+                if escaping:
+                    processed.append(char)
+                    escaping = False
+                elif char == "\\":
+                    escaping = True
+                else:
+                    processed.append(char)
+            result.append("".join(processed))
 
     print(" ".join(result))
 
