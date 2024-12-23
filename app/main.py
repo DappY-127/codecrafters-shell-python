@@ -55,27 +55,27 @@ def execute_echo(command):
             result.append(single_quote)
         elif double_quote:
             processed = []
-            escaping = False
-            for char in double_quote:
-                if escaping:
-                    processed.append(char)
-                    escaping = False
-                elif char == "\\":
-                    escaping = True
+            i = 0
+            while i < len(double_quote):
+                if double_quote[i] == "\\" and i + 1 < len(double_quote):
+                    processed.append(double_quote[i]) 
+                    processed.append(double_quote[i + 1]) 
+                    i += 2  
                 else:
-                    processed.append(char)
+                    processed.append(double_quote[i])
+                    i += 1
             result.append("".join(processed))
         elif unquoted:
             processed = []
-            escaping = False
-            for char in unquoted:
-                if escaping:
-                    processed.append(char)
-                    escaping = False
-                elif char == "\\":
-                    escaping = True
+            i = 0
+            while i < len(unquoted):
+                if unquoted[i] == "\\" and i + 1 < len(unquoted):
+                    processed.append(unquoted[i]) 
+                    processed.append(unquoted[i + 1])
+                    i += 2 
                 else:
-                    processed.append(char)
+                    processed.append(unquoted[i])
+                    i += 1
             result.append("".join(processed))
 
     print(" ".join(result))
