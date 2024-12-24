@@ -71,32 +71,21 @@ def execute_external_program(command, args):
 def execute_pwd():
     sys.stdout.write(f"{os.getcwd()}")
 
-def execute_cd(command):
-    command, _, directory = command.partition(" ")
-    directory = directory.strip()
-    if not directory:
-        print(f"{command}: argument required")
+def execute_cd(args):
+    if not args:
+        sys.stdout.write("cd: argument required\n")
         return
-    
+
+    directory = args[0]
     if directory.startswith("~"):
-        home_dir = os.getenv("HOME")
-        if not home_dir:
-            print(f"{command}: HOME environment variable is not set")
-            return
-        directory = directory.replace("~", home_dir, 1)
+        directory = os.path.expanduser(directory)
 
-    if os.path.isabs(directory):
-        new_path = directory
-    else:
-        new_path = os.path.join(os.getcwd(), directory)
-
-    if os.path.isdir(directory):
-        try:
-            os.chdir(directory)
-        except PermissionError:
-            print(f"{command}: {directory}: Permission denied")
-    else:
-        print(f'{command}: {directory}: No such file or directory')
+    try:
+        os.chdir(directory)
+    except FileNotFoundError:
+        sys.stdout.write(f"cd: {directory}: No such file or directory\n")
+    except PermissionError:
+        sys.stdout.write(f"cd: {directory}: Permission denied\n")
 
 def main():
     while True:
