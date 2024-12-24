@@ -69,7 +69,7 @@ def execute_external_program(command, args):
         sys.stdout.write(f"{command}: command not found\n")
 
 def execute_pwd():
-    sys.stdout.write(f"{os.getcwd()}")
+    sys.stdout.write(f"{os.getcwd()}\n")
 
 def execute_cd(args):
     if not args:
