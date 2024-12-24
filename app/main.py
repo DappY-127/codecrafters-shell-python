@@ -93,7 +93,7 @@ def execute_type(command, redirect_stdout=None, redirect_stderr=None):
 
 def execute_echo(command, redirect_stdout=None, redirect_stderr=None):
     write_output(f"{' '.join(command)}\n", redirect_stdout, redirect_stderr)
-    
+
 def execute_external_program(command, args, redirect_stdout, redirect_stderr):
     executable_path = check_path(command)
 
@@ -116,8 +116,8 @@ def execute_external_program(command, args, redirect_stdout, redirect_stderr):
         sys.stdout.write(f"{command}: command not found\n")
 
 def execute_pwd(redirect_stdout=None, redirect_stderr=None):
-    sys.stdout.write(f"{os.getcwd()}\n", redirect_stdout, redirect_stderr)
-
+    write_output(f"{os.getcwd()}\n", redirect_stdout, None)
+    
 def execute_cd(args):
     if not args:
         sys.stdout.write("cd: argument required\n")
