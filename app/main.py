@@ -20,10 +20,10 @@ def parse_command_and_args(raw_args):
     redirect_stdout = None
     redirect_stderr = None
 
-    if ">" in args or "2>" in args:
+    if ">" or "1>" in args or "2>" in args:
         i = 0
         while i < len(args):
-            if args[i] == ">":
+            if args[i] == ">" or args[i] == "1>":
                 if i + 1 < len(args):
                     redirect_stdout = args[i + 1]
                     del args[i:i + 2]
