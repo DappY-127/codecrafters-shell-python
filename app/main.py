@@ -2,7 +2,6 @@ import sys
 import os
 import subprocess
 import shlex
-import re
 
 
 BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd"}
@@ -18,58 +17,106 @@ def check_path(command_name):
 def parse_command_and_args(raw_args):
     args = shlex.split(raw_args)
     command = args[0] if args else ""
-    return command, args[1:]
+    redirect_stdout = None
+    redirect_stderr = None
 
-def handle_command(command, args):
+    if ">" in args or "2>" in args:
+        i = 0
+        while i < len(args):
+            if args[i] == ">":
+                if i + 1 < len(args):
+                    redirect_stdout = args[i + 1]
+                    del args[i:i + 2]
+                else:
+                    break
+            elif args[i] == "2>":
+                if i + 1 < len(args):
+                    redirect_stderr = args[i + 1]
+                    del args[i:i + 2]
+                else:
+                    break
+            else:
+                i += 1
+
+    return command, args[1:], redirect_stdout, redirect_stderr
+
+def handle_command(command, args, redirect_stdout, redirect_stderr):
     if command == "exit":
         execute_exit(args)
     elif command == "echo":
-        execute_echo(args)
+        execute_echo(args, redirect_stdout, redirect_stderr)
     elif command == "pwd":
-        execute_pwd()
+        execute_pwd(redirect_stdout, redirect_stderr)
     elif command == "cd":
         execute_cd(args)
     elif command == "type":
-        execute_type(args)
+        execute_type(args, redirect_stdout, redirect_stderr)
     else:
-        execute_external_program(command, args)
+        execute_external_program(command, args, redirect_stdout, redirect_stderr)
+
+def write_output(output, redirect_stdout, redirect_stderr):
+    if redirect_stdout:
+        try:
+            with open(redirect_stdout, "a") as file:
+                file.write(output)
+        except IOError as e:
+            sys.stdout.write(f"Error writing to file {redirect_stdout}: {e}\n")
+    elif redirect_stderr:
+        try:
+            with open(redirect_stderr, "a") as file:
+                file.write(output)
+        except IOError as e:
+            sys.stdout.write(f"Error writing to file {redirect_stderr}: {e}\n")
+    else:
+        sys.stdout.write(output)
 
 def execute_exit(command):
     status_code = int(command[0]) if command and command[0].isdigit() else 0
     sys.exit(status_code)
 
-def execute_type(command):
+def execute_type(command, redirect_stdout=None, redirect_stderr=None):
+    output = []
     if not command:
-        sys.stdout.write("type: argument required\n")
-        return
-
-    for name in command:
-        if name in BUILTIN_COMMANDS:
-            sys.stdout.write(f"{name} is a shell builtin\n")
-        else:
-            path = check_path(name)
-            if path:
-                sys.stdout.write(f"{name} is {path}\n")
+        output.append("type: argument required\n")
+    else:
+        for name in command:
+            if name in BUILTIN_COMMANDS:
+                output.append(f"{name} is a shell builtin\n")
             else:
-                sys.stdout.write(f"{name}: not found\n")
+                path = check_path(name)
+                if path:
+                    output.append(f"{name} is {path}\n")
+                else:
+                    output.append(f"{name}: not found\n")
 
-def execute_echo(command):
-    sys.stdout.write(f"{' '.join(command)}\n")
+    write_output("".join(output), redirect_stdout, redirect_stderr)
 
-def execute_external_program(command, args):
+def execute_echo(command, redirect_stdout=None, redirect_stderr=None):
+    sys.stdout.write(f"{' '.join(command)}\n", redirect_stdout, redirect_stderr)
+
+def execute_external_program(command, args, redirect_stdout, redirect_stderr):
     executable_path = check_path(command)
 
     if executable_path:
         try:
-            result = subprocess.run([executable_path, *args], capture_output=True, text=True)
-            sys.stdout.write(result.stdout)
+            with subprocess.Popen(
+                [executable_path, *args],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            ) as proc:
+                stdout, stderr = proc.communicate()
+                write_output(stdout, redirect_stdout, None)
+                write_output(stderr, None, redirect_stderr)
+        except FileNotFoundError:
+            sys.stdout.write(f"{command}: command not found\n")
         except subprocess.CalledProcessError as e:
-            sys.stdout.write(e.stderr)
+            write_output("", None, redirect_stderr)
     else:
         sys.stdout.write(f"{command}: command not found\n")
 
-def execute_pwd():
-    sys.stdout.write(f"{os.getcwd()}\n")
+def execute_pwd(redirect_stdout=None, redirect_stderr=None):
+    sys.stdout.write(f"{os.getcwd()}\n", redirect_stdout, redirect_stderr)
 
 def execute_cd(args):
     if not args:
@@ -96,8 +143,8 @@ def main():
             if not raw_command:
                 continue
 
-            command, args = parse_command_and_args(raw_command)
-            handle_command(command, args)
+            command, args, redirect_stdout, redirect_stderr = parse_command_and_args(raw_command)
+            handle_command(command, args, redirect_stdout, redirect_stderr)
             
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
