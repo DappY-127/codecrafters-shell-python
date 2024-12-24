@@ -46,20 +46,40 @@ def execute_echo(command):
         print("")
         return
     
-    message = re.sub(r"\\ ", " ", message)
-    pattern = r"'([^']*)'|\"([^\"]*)\"|(\S+)"
-    matches = re.findall(pattern, message)
+    in_single_quote = False
+    in_double_quote = False
+    last_backslash = False
+    args = []
+    arg = ""
 
-    result = []
-    for single_quote, double_quote, unquoted in matches:
-        if single_quote:
-            result.append(single_quote)
-        elif double_quote:
-            result.append(double_quote)
-        elif unquoted:
-            result.append(unquoted)
+    for char in message:
+        if char == "\\" and not in_single_quote:
+            if last_backslash:
+                arg += "\\"
+                last_backslash = False
+            else:
+                last_backslash = True
+        elif last_backslash:
+            arg += char
+            last_backslash = False
+        elif char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+        elif char == " " and not in_single_quote and not in_double_quote:
+            if arg:
+                args.append(arg)
+                arg = ""
+        else:
+            arg += char
 
-    print(" ".join(result))
+    if arg:
+        args.append(arg)
+
+    if in_single_quote or in_double_quote:
+        raise Exception("Unmatched quotes in input")
+
+    print(" ".join(args))
 
 def execute_cat(command):
     command, _, args = command.partition(" ")
