@@ -15,107 +15,61 @@ def check_path(command_name):
             return full_path
     return None
 
-def execute_exit(command):
-    command, _, status_code = command.partition(" ")
-    status_code = status_code.strip()
-    if status_code.isdigit():
-        sys.exit(int(status_code))
+def parse_command_and_args(raw_args):
+    args = shlex.split(raw_args)
+    command = args[0] if args else ""
+    return command, args[1:]
+
+def handle_command(command, args):
+    if command == "exit":
+        execute_exit(args)
+    elif command == "echo":
+        execute_echo(args)
+    elif command == "pwd":
+        execute_pwd()
+    elif command == "cd":
+        execute_cd(args)
+    elif command == "type":
+        execute_type(args)
     else:
-        print("exit: numeric argument required")
-        sys.exit(1)
+        execute_external_program(command, args)
+
+def execute_exit(command):
+    status_code = int(command[0]) if command and command[0].isdigit() else 0
+    sys.exit(status_code)
 
 def execute_type(command):
-    command, _, command_name = command.partition(" ")
-    if not command_name.strip():
-        print("type: argument required")
+    if not command:
+        sys.stdout.write("type: argument required\n")
         return
 
-    for name in command_name.split():
+    for name in command:
         if name in BUILTIN_COMMANDS:
-            print(f'{name} is a shell builtin')
+            sys.stdout.write(f"{name} is a shell builtin\n")
         else:
-            execution_path = check_path(name)
-            if execution_path:
-                print(f'{name} is {execution_path}')
+            path = check_path(name)
+            if path:
+                sys.stdout.write(f"{name} is {path}\n")
             else:
-                print(f'{name}: not found')
+                sys.stdout.write(f"{name}: not found\n")
 
 def execute_echo(command):
-    command, _, message = command.partition(" ")
-    if not message.strip():
-        print("")
-        return
-    
-    in_single_quote = False
-    in_double_quote = False
-    last_backslash = False
-    args = []
-    arg = ""
+    sys.stdout.write(f"{' '.join(command)}\n")
 
-    for char in message:
-        if char == "\\" and not in_single_quote:
-            if last_backslash:
-                arg += "\\"
-                last_backslash = False
-            else:
-                last_backslash = True
-        elif last_backslash:
-            arg += char
-            last_backslash = False
-        elif char == "'" and not in_double_quote:
-            in_single_quote = not in_single_quote
-        elif char == '"' and not in_single_quote:
-            in_double_quote = not in_double_quote
-        elif char == " " and not in_single_quote and not in_double_quote:
-            if arg:
-                args.append(arg)
-                arg = ""
-        else:
-            arg += char
-
-    if arg:
-        args.append(arg)
-
-    if in_single_quote or in_double_quote:
-        raise Exception("Unmatched quotes in input")
-
-    print(" ".join(args))
-
-def execute_cat(command):
-    command, _, args = command.partition(" ")
-    if not args.strip():
-        print("cat: missing arguments")
-        return
-    
-    try:
-        parsed_args = shlex.split(args)
-        for filename in parsed_args:
-            try:
-                with open(filename, 'r') as file:
-                    print(file.read(), end="")
-            except FileNotFoundError:
-                print(f"cat: {filename}: No such file or directory")
-    except ValueError as e:
-        print(f"cat: {str(e)}")
-
-def execute_external_program(command):
-    args = command.split()
-    program = args[0]
-    executable_path = check_path(program)
+def execute_external_program(command, args):
+    executable_path = check_path(command)
 
     if executable_path:
         try:
-            result = subprocess.run(args, check=True, text=True, capture_output=True)
-            print(result.stdout, end='')
+            result = subprocess.run([executable_path, *args], capture_output=True, text=True)
+            sys.stdout.write(result.stdout)
         except subprocess.CalledProcessError as e:
-            print(e.stderr, end='')
-    
+            sys.stdout.write(e.stderr)
     else:
-        print(f"{program}: command not found")
+        sys.stdout.write(f"{command}: command not found\n")
 
 def execute_pwd():
-    working_directory = os.getcwd()
-    print(working_directory)
+    sys.stdout.write(f"{os.getcwd()}")
 
 def execute_cd(command):
     command, _, directory = command.partition(" ")
@@ -149,28 +103,12 @@ def main():
         try:
             sys.stdout.write("$ ")
             sys.stdout.flush()
-            command = input().strip()
+            raw_command = input().strip()
+            if not raw_command:
+                continue
 
-            if command.startswith('exit'):
-                execute_exit(command=command)
-
-            elif command.startswith('echo'):
-                execute_echo(command=command)
-
-            elif command.startswith('type'):
-                execute_type(command=command)
-
-            elif command.startswith('pwd'):
-                execute_pwd()
-
-            elif command.startswith('cd'):
-                execute_cd(command=command)
-
-            elif command.startswith('cat'):
-                execute_cat(command=command)
-
-            else:
-                execute_external_program(command=command)
+            command, args = parse_command_and_args(raw_command)
+            handle_command(command, args)
             
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
