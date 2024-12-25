@@ -54,21 +54,19 @@ def handle_command(command, args, redirect_stdout, redirect_stderr):
     else:
         execute_external_program(command, args, redirect_stdout, redirect_stderr)
 
-def write_output(output, redirect_stdout, redirect_stderr):
-    if redirect_stdout:
+def write_output(output, redirect_stdout=None, redirect_stderr=None, is_error=False):
+    target = redirect_stderr if is_error else redirect_stdout
+    if target:
         try:
-            with open(redirect_stdout, "a") as file:
+            with open(target, "a") as file:
                 file.write(output)
         except IOError as e:
-            sys.stdout.write(f"Error writing to file {redirect_stdout}: {e}\n")
-    elif redirect_stderr:
-        try:
-            with open(redirect_stderr, "a") as file:
-                file.write(output)
-        except IOError as e:
-            sys.stdout.write(f"Error writing to file {redirect_stderr}: {e}\n")
+            sys.stderr.write(f"Error writing to file {target}: {e}\n")
     else:
-        sys.stdout.write(output)
+        if is_error:
+            sys.stderr.write(output)
+        else:
+            sys.stdout.write(output)
 
 def execute_exit(command):
     status_code = int(command[0]) if command and command[0].isdigit() else 0
@@ -92,7 +90,10 @@ def execute_type(command, redirect_stdout=None, redirect_stderr=None):
     write_output("".join(output), redirect_stdout, redirect_stderr)
 
 def execute_echo(command, redirect_stdout=None, redirect_stderr=None):
-    write_output(f"{' '.join(command)}\n", redirect_stdout, redirect_stderr)
+    if redirect_stderr:
+        write_output(f"{' '.join(command)}\n", None, redirect_stderr, is_error=True)
+    else:
+        write_output(f"{' '.join(command)}\n", redirect_stdout, None)
 
 def execute_external_program(command, args, redirect_stdout, redirect_stderr):
     executable_path = check_path(command)
