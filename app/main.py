@@ -102,19 +102,22 @@ def execute_external_program(command, args, redirect_stdout, redirect_stderr):
         try:
             with subprocess.Popen(
                 [executable_path, *args],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE if redirect_stdout else None,
+                stderr=subprocess.PIPE if redirect_stderr else None,
                 text=True
             ) as proc:
                 stdout, stderr = proc.communicate()
-                write_output(stdout, redirect_stdout, None)
-                write_output(stderr, None, redirect_stderr)
+
+                if stdout:
+                    write_output(stdout, redirect_stdout, None)
+                if stderr:
+                    write_output(stderr, None, redirect_stderr, is_error=True)
         except FileNotFoundError:
-            sys.stdout.write(f"{command}: command not found\n")
-        except subprocess.CalledProcessError as e:
-            write_output("", None, redirect_stderr)
+            sys.stderr.write(f"{command}: command not found\n")
+        except Exception as e:
+            sys.stderr.write(f"Error executing {command}: {e}\n")
     else:
-        sys.stdout.write(f"{command}: command not found\n")
+        sys.stderr.write(f"{command}: command not found\n")
 
 def execute_pwd(redirect_stdout=None, redirect_stderr=None):
     write_output(f"{os.getcwd()}\n", redirect_stdout, None)
