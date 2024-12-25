@@ -131,8 +131,9 @@ def execute_external_program(command, args, redirect_stdout, redirect_stderr, ap
     else:
         sys.stderr.write(f"{command}: command not found\n")
 
-def execute_pwd(redirect_stdout=None, redirect_stderr=None):
-    write_output(f"{os.getcwd()}\n", redirect_stdout, None)
+def execute_pwd(redirect_stdout=None, redirect_stderr=None, append_stdout=None):
+    output = f"{os.getcwd()}\n"
+    write_output(output, redirect_stdout or append_stdout, redirect_stderr)
     
 def execute_cd(args):
     if not args:
