@@ -159,9 +159,9 @@ def main():
             if not raw_command:
                 continue
 
-            command, args, redirect_stdout, redirect_stderr = parse_command_and_args(raw_command)
-            handle_command(command, args, redirect_stdout, redirect_stderr)
-            
+            command, args, redirect_stdout, redirect_stderr, append_stdout = parse_command_and_args(raw_command)
+            handle_command(command, args, redirect_stdout, redirect_stderr, append_stdout)
+
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
             sys.exit(0)
