@@ -107,23 +107,23 @@ def execute_echo(command, redirect_stdout=None, redirect_stderr=None, append_std
     if command:
         write_output(f"{' '.join(command)}\n", redirect_stdout, None, append_stdout)
 
-def execute_external_program(command, args, redirect_stdout, redirect_stderr):
+def execute_external_program(command, args, redirect_stdout, redirect_stderr, append_stdout=None):
     executable_path = check_path(command)
 
     if executable_path:
         try:
             with subprocess.Popen(
                 [executable_path, *args],
-                stdout=subprocess.PIPE if redirect_stdout else None,
+                stdout=subprocess.PIPE if redirect_stdout or append_stdout else None,
                 stderr=subprocess.PIPE if redirect_stderr else None,
                 text=True
             ) as proc:
                 stdout, stderr = proc.communicate()
 
                 if stdout:
-                    write_output(stdout, redirect_stdout, None)
+                    write_output(stdout, redirect_stdout, redirect_stderr, append_stdout)
                 if stderr:
-                    write_output(stderr, None, redirect_stderr, is_error=True)
+                    write_output(stderr, redirect_stdout, redirect_stderr, is_error=True)
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
         except Exception as e:
