@@ -19,13 +19,20 @@ def parse_command_and_args(raw_args):
     command = args[0] if args else ""
     redirect_stdout = None
     redirect_stderr = None
+    append_stdout = None  # For appending stdout
 
-    if ">" in args or "1>" in args or "2>" in args:
+    if ">" in args or "1>" in args or "2>" in args or ">>" in args or "1>>" in args:
         i = 0
         while i < len(args):
             if args[i] in {">", "1>"}:
                 if i + 1 < len(args):
                     redirect_stdout = args[i + 1]
+                    del args[i:i + 2]
+                else:
+                    break
+            elif args[i] in {">>", "1>>"}:
+                if i + 1 < len(args):
+                    append_stdout = args[i + 1]
                     del args[i:i + 2]
                 else:
                     break
@@ -38,27 +45,28 @@ def parse_command_and_args(raw_args):
             else:
                 i += 1
 
-    return command, args[1:], redirect_stdout, redirect_stderr
+    return command, args[1:], redirect_stdout, redirect_stderr, append_stdout
 
-def handle_command(command, args, redirect_stdout, redirect_stderr):
+def handle_command(command, args, redirect_stdout, redirect_stderr, append_stdout):
     if command == "exit":
         execute_exit(args)
     elif command == "echo":
-        execute_echo(args, redirect_stdout, redirect_stderr)
+        execute_echo(args, redirect_stdout, redirect_stderr, append_stdout)
     elif command == "pwd":
-        execute_pwd(redirect_stdout, redirect_stderr)
+        execute_pwd(redirect_stdout, redirect_stderr, append_stdout)
     elif command == "cd":
         execute_cd(args)
     elif command == "type":
         execute_type(args, redirect_stdout, redirect_stderr)
     else:
-        execute_external_program(command, args, redirect_stdout, redirect_stderr)
+        execute_external_program(command, args, redirect_stdout, redirect_stderr, append_stdout)
 
-def write_output(output, redirect_stdout=None, redirect_stderr=None, is_error=False):
-    target = redirect_stderr if is_error else redirect_stdout
+def write_output(output, redirect_stdout=None, redirect_stderr=None, append_stdout=None, is_error=False):
+    target = append_stdout if append_stdout else (redirect_stderr if is_error else redirect_stdout)
+    mode = "a" if append_stdout else "w" 
     if target:
         try:
-            with open(target, "a") as file:
+            with open(target, mode) as file:
                 file.write(output)
         except IOError as e:
             sys.stderr.write(f"Error writing to file {target}: {e}\n")
@@ -89,7 +97,7 @@ def execute_type(command, redirect_stdout=None, redirect_stderr=None):
 
     write_output("".join(output), redirect_stdout, redirect_stderr)
 
-def execute_echo(command, redirect_stdout=None, redirect_stderr=None):
+def execute_echo(command, redirect_stdout=None, redirect_stderr=None, append_stdout=None):
     if redirect_stderr:
         try:
             with open(redirect_stderr, "a"):
@@ -97,7 +105,7 @@ def execute_echo(command, redirect_stdout=None, redirect_stderr=None):
         except IOError as e:
             sys.stderr.write(f"Error creating file {redirect_stderr}: {e}\n")
     if command:
-        write_output(f"{' '.join(command)}\n", redirect_stdout, None)
+        write_output(f"{' '.join(command)}\n", redirect_stdout, None, append_stdout)
 
 def execute_external_program(command, args, redirect_stdout, redirect_stderr):
     executable_path = check_path(command)
