@@ -91,8 +91,12 @@ def execute_type(command, redirect_stdout=None, redirect_stderr=None):
 
 def execute_echo(command, redirect_stdout=None, redirect_stderr=None):
     if redirect_stderr:
-        write_output(f"{' '.join(command)}\n", None, redirect_stderr, is_error=True)
-    else:
+        try:
+            with open(redirect_stderr, "a"):
+                pass  
+        except IOError as e:
+            sys.stderr.write(f"Error creating file {redirect_stderr}: {e}\n")
+    if command:
         write_output(f"{' '.join(command)}\n", redirect_stdout, None)
 
 def execute_external_program(command, args, redirect_stdout, redirect_stderr):
