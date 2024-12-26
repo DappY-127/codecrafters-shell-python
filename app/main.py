@@ -81,14 +81,14 @@ def write_output(
         append_stderr if is_error else append_stdout if append_stdout else (redirect_stderr if is_error else redirect_stdout)
     )
 
+    mode = "a" if (is_error and append_stderr) or (not is_error and append_stdout) else "w"
     if target:
-        mode = "a" if (is_error and append_stderr) or (not is_error and append_stdout) else "w"
         try:
             os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, mode) as file:
                 file.write(output)
-        except Exception as e:
-            sys.stderr.write(f"Error writing to {target}: {e}\n")
+        except IOError as e:
+            sys.stderr.write(f"Error writing to file {target}: {e}\n")
     else:
         if is_error:
             sys.stderr.write(output)
@@ -128,10 +128,18 @@ def execute_external_program(
     executable_path = check_path(command)
     if executable_path:
         try:
+            stderr_file = None
+            if append_stderr:
+                os.makedirs(os.path.dirname(append_stderr), exist_ok=True)
+                stderr_file = open(append_stderr, "a")
+            elif redirect_stderr:
+                os.makedirs(os.path.dirname(redirect_stderr), exist_ok=True)
+                stderr_file = open(redirect_stderr, "w")
+
             with subprocess.Popen(
                 [executable_path, *args],
                 stdout=subprocess.PIPE if redirect_stdout or append_stdout else None,
-                stderr=subprocess.PIPE if redirect_stderr or append_stderr else None,
+                stderr=stderr_file or subprocess.PIPE,
                 text=True,
             ) as proc:
                 stdout, stderr = proc.communicate()
@@ -140,12 +148,15 @@ def execute_external_program(
                     write_output(
                         stdout, redirect_stdout, None, append_stdout
                     )
-                if stderr:
+                if stderr_file is None and stderr:
                     write_output(
                         stderr, None, redirect_stderr, None, append_stderr, is_error=True
                     )
         except Exception as e:
             sys.stderr.write(f"{command}: Error: {str(e)}\n")
+        finally:
+            if stderr_file:
+                stderr_file.close()
     else:
         sys.stderr.write(f"{command}: command not found\n")
 
