@@ -78,7 +78,7 @@ def write_output(output, redirect_stdout=None, redirect_stderr=None, append_stdo
 
     if target:
         try:
-            os.makedirs(os.path.dirname(target), exist_ok=True) 
+            os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, mode) as file:
                 file.write(output)
         except IOError as e:
@@ -121,8 +121,8 @@ def execute_external_program(command, args, redirect_stdout, redirect_stderr, ap
         try:
             with subprocess.Popen(
                 [executable_path, *args],
-                stdout=subprocess.PIPE if redirect_stdout or append_stdout else None,
-                stderr=subprocess.PIPE if redirect_stderr or append_stderr else None,
+                stdout=subprocess.PIPE if (redirect_stdout or append_stdout) else None,
+                stderr=subprocess.PIPE if (redirect_stderr or append_stderr) else None,
                 text=True
             ) as proc:
                 stdout, stderr = proc.communicate()
