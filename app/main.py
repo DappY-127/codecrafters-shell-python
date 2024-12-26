@@ -150,7 +150,7 @@ def execute_external_program(
                     )
                 if stderr_file is None and stderr:
                     write_output(
-                        stderr, None, redirect_stderr, None, append_stderr, is_error=True
+                        stderr, None, redirect_stderr, append_stdout, is_error=True
                     )
         except Exception as e:
             sys.stderr.write(f"{command}: Error: {str(e)}\n")
