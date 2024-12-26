@@ -69,12 +69,12 @@ def handle_command(command, args, redirect_stdout, redirect_stderr, append_stdou
         execute_external_program(command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
 
 def write_output(output, redirect_stdout=None, redirect_stderr=None, append_stdout=None, append_stderr=None, is_error=False):
-    if is_error:
-        target = append_stderr if append_stderr else redirect_stderr
-    else:
-        target = append_stdout if append_stdout else redirect_stdout
+    target = append_stderr if (is_error and append_stderr) else \
+             redirect_stderr if (is_error and redirect_stderr) else \
+             append_stdout if append_stdout else \
+             redirect_stdout
 
-    mode = "a" if (append_stdout or append_stderr) else "w"
+    mode = "a" if (is_error and append_stderr) or append_stdout else "w"
 
     if target:
         try:
@@ -121,8 +121,8 @@ def execute_external_program(command, args, redirect_stdout, redirect_stderr, ap
         try:
             with subprocess.Popen(
                 [executable_path, *args],
-                stdout=subprocess.PIPE if (redirect_stdout or append_stdout) else None,
-                stderr=subprocess.PIPE if (redirect_stderr or append_stderr) else None,
+                stdout=subprocess.PIPE if redirect_stdout or append_stdout else None,
+                stderr=subprocess.PIPE if redirect_stderr or append_stderr else None,
                 text=True
             ) as proc:
                 stdout, stderr = proc.communicate()
