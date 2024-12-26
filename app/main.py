@@ -3,7 +3,6 @@ import os
 import subprocess
 import shlex
 
-
 BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd"}
 
 def check_path(command_name):
@@ -28,25 +27,25 @@ def parse_command_and_args(raw_args):
             if args[i] in {">", "1>"}:
                 if i + 1 < len(args):
                     redirect_stdout = args[i + 1]
-                    del args[i:i + 2]
+                    del args[i : i + 2]
                 else:
                     break
             elif args[i] in {">>", "1>>"}:
                 if i + 1 < len(args):
                     append_stdout = args[i + 1]
-                    del args[i:i + 2]
+                    del args[i : i + 2]
                 else:
                     break
             elif args[i] == "2>":
                 if i + 1 < len(args):
                     redirect_stderr = args[i + 1]
-                    del args[i:i + 2]
+                    del args[i : i + 2]
                 else:
                     break
             elif args[i] == "2>>":
                 if i + 1 < len(args):
                     append_stderr = args[i + 1]
-                    del args[i:i + 2]
+                    del args[i : i + 2]
                 else:
                     break
             else:
@@ -58,27 +57,33 @@ def handle_command(command, args, redirect_stdout, redirect_stderr, append_stdou
     if command == "exit":
         execute_exit(args)
     elif command == "echo":
-        execute_echo(args, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+        execute_echo(args, redirect_stdout, redirect_stderr, append_stdout)
     elif command == "pwd":
-        execute_pwd(redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+        execute_pwd(redirect_stdout, redirect_stderr, append_stdout)
     elif command == "cd":
         execute_cd(args)
     elif command == "type":
         execute_type(args, redirect_stdout, redirect_stderr)
     else:
-        execute_external_program(command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+        execute_external_program(
+            command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr
+        )
 
-def write_output(output, redirect_stdout=None, redirect_stderr=None, append_stdout=None, append_stderr=None, is_error=False):
-    target = append_stderr if (is_error and append_stderr) else \
-             redirect_stderr if (is_error and redirect_stderr) else \
-             append_stdout if append_stdout else \
-             redirect_stdout
+def write_output(
+    output,
+    redirect_stdout=None,
+    redirect_stderr=None,
+    append_stdout=None,
+    append_stderr=None,
+    is_error=False,
+):
+    target = (
+        append_stderr if is_error else append_stdout if append_stdout else (redirect_stderr if is_error else redirect_stdout)
+    )
 
-    mode = "a" if append_stdout or (is_error and append_stderr) else "w"
-
+    mode = "a" if (is_error and append_stderr) or (not is_error and append_stdout) else "w"
     if target:
         try:
-            os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, mode) as file:
                 file.write(output)
         except IOError as e:
@@ -110,27 +115,35 @@ def execute_type(command, redirect_stdout=None, redirect_stderr=None):
 
     write_output("".join(output), redirect_stdout, redirect_stderr)
 
-def execute_echo(command, redirect_stdout=None, redirect_stderr=None, append_stdout=None, append_stderr=None):
+def execute_echo(
+    command, redirect_stdout=None, redirect_stderr=None, append_stdout=None
+):
     if command:
-        write_output(f"{' '.join(command)}\n", redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+        write_output(f"{' '.join(command)}\n", redirect_stdout, None, append_stdout)
 
-def execute_external_program(command, args, redirect_stdout, redirect_stderr, append_stdout=None, append_stderr=None):
+def execute_external_program(
+    command, args, redirect_stdout, redirect_stderr, append_stdout=None, append_stderr=None
+):
     executable_path = check_path(command)
-
     if executable_path:
         try:
             with subprocess.Popen(
                 [executable_path, *args],
                 stdout=subprocess.PIPE if redirect_stdout or append_stdout else None,
                 stderr=subprocess.PIPE if redirect_stderr or append_stderr else None,
-                text=True
+                text=True,
             ) as proc:
                 stdout, stderr = proc.communicate()
 
                 if stdout:
-                    write_output(stdout, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+                    write_output(
+                        stdout, redirect_stdout, redirect_stderr, append_stdout
+                    )
                 if stderr:
-                    write_output(stderr, redirect_stdout, redirect_stderr, append_stdout, append_stderr, is_error=True)
+                    write_output(
+                        stderr, redirect_stdout, redirect_stderr, append_stderr, is_error=True
+                    )
+
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
         except Exception as e:
@@ -138,9 +151,9 @@ def execute_external_program(command, args, redirect_stdout, redirect_stderr, ap
     else:
         sys.stderr.write(f"{command}: command not found\n")
 
-def execute_pwd(redirect_stdout=None, redirect_stderr=None, append_stdout=None, append_stderr=None):
+def execute_pwd(redirect_stdout=None, redirect_stderr=None, append_stdout=None):
     output = f"{os.getcwd()}\n"
-    write_output(output, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+    write_output(output, redirect_stdout or append_stdout, redirect_stderr)
 
 def execute_cd(args):
     if not args:
@@ -150,7 +163,6 @@ def execute_cd(args):
     directory = args[0]
     if directory.startswith("~"):
         directory = os.path.expanduser(directory)
-
     try:
         os.chdir(directory)
     except FileNotFoundError:
@@ -167,13 +179,17 @@ def main():
             if not raw_command:
                 continue
 
-            command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr = parse_command_and_args(raw_command)
-            handle_command(command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+            command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr = (
+                parse_command_and_args(raw_command)
+            )
+
+            handle_command(
+                command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr
+            )
 
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
             sys.exit(0)
-
 
 if __name__ == "__main__":
     main()
