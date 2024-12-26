@@ -74,7 +74,7 @@ def write_output(output, redirect_stdout=None, redirect_stderr=None, append_stdo
              append_stdout if append_stdout else \
              redirect_stdout
 
-    mode = "a" if (is_error and append_stderr) or append_stdout else "w"
+    mode = "a" if append_stdout or (is_error and append_stderr) else "w"
 
     if target:
         try:
