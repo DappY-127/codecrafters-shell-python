@@ -137,17 +137,14 @@ def execute_external_program(
 
                 if stdout:
                     write_output(
-                        stdout, redirect_stdout, redirect_stderr, append_stdout
+                        stdout, redirect_stdout, None, append_stdout
                     )
                 if stderr:
                     write_output(
-                        stderr, redirect_stdout, redirect_stderr, append_stderr, is_error=True
+                        stderr, None, redirect_stderr, None, append_stderr, is_error=True
                     )
-
-        except FileNotFoundError:
-            sys.stderr.write(f"{command}: command not found\n")
         except Exception as e:
-            sys.stderr.write(f"Error executing {command}: {e}\n")
+            sys.stderr.write(f"{command}: Error: {str(e)}\n")
     else:
         sys.stderr.write(f"{command}: command not found\n")
 
