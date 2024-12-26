@@ -58,17 +58,26 @@ def handle_command(command, args, redirect_stdout, redirect_stderr, append_stdou
     if command == "exit":
         execute_exit(args)
     elif command == "echo":
-        execute_echo(args, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+        execute_echo(args, redirect_stdout, redirect_stderr, append_stdout)
     elif command == "pwd":
-        execute_pwd(redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+        execute_pwd(redirect_stdout, redirect_stderr, append_stdout)
     elif command == "cd":
         execute_cd(args)
     elif command == "type":
         execute_type(args, redirect_stdout, redirect_stderr)
     else:
-        execute_external_program(command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
-
-def write_output(output, redirect_stdout=None, redirect_stderr=None, append_stdout=None, append_stderr=None, is_error=False):
+        execute_external_program(
+            command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr
+        )
+    
+def write_output(
+    output,
+    redirect_stdout=None,
+    redirect_stderr=None,
+    append_stdout=None,
+    append_stderr=None,
+    is_error=False,
+):
     if is_error:
         target = append_stderr if append_stderr else redirect_stderr
     else:
@@ -78,7 +87,6 @@ def write_output(output, redirect_stdout=None, redirect_stderr=None, append_stdo
 
     if target:
         try:
-            os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, mode) as file:
                 file.write(output)
         except IOError as e:
@@ -110,27 +118,45 @@ def execute_type(command, redirect_stdout=None, redirect_stderr=None):
 
     write_output("".join(output), redirect_stdout, redirect_stderr)
 
-def execute_echo(command, redirect_stdout=None, redirect_stderr=None, append_stdout=None, append_stderr=None):
+def execute_echo(
+    command, redirect_stdout=None, redirect_stderr=None, append_stdout=None, append_stderr=None
+):
+    if redirect_stderr or append_stderr:
+        target = append_stderr if append_stderr else redirect_stderr
+        try:
+            with open(target, "a"):
+                pass
+        except IOError as e:
+            sys.stderr.write(f"Error creating file {target}: {e}\n")
+
     if command:
-        write_output(f"{' '.join(command)}\n", redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+        write_output(
+            f"{' '.join(command)}\n", 
+            redirect_stdout, 
+            redirect_stderr, 
+            append_stdout, 
+            append_stderr
+        )
 
-def execute_external_program(command, args, redirect_stdout, redirect_stderr, append_stdout=None, append_stderr=None):
+def execute_external_program(
+    command, args, redirect_stdout, redirect_stderr, append_stdout, append_stderr=None
+):
     executable_path = check_path(command)
-
     if executable_path:
         try:
             with subprocess.Popen(
                 [executable_path, *args],
                 stdout=subprocess.PIPE if redirect_stdout or append_stdout else None,
                 stderr=subprocess.PIPE if redirect_stderr or append_stderr else None,
-                text=True
+                text=True,
             ) as proc:
                 stdout, stderr = proc.communicate()
 
                 if stdout:
-                    write_output(stdout, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+                    write_output(stdout, redirect_stdout, None, append_stdout)
                 if stderr:
-                    write_output(stderr, redirect_stdout, redirect_stderr, append_stdout, append_stderr, is_error=True)
+                    write_output(stderr, None, redirect_stderr, append_stderr, is_error=True)
+
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
         except Exception as e:
@@ -140,7 +166,7 @@ def execute_external_program(command, args, redirect_stdout, redirect_stderr, ap
 
 def execute_pwd(redirect_stdout=None, redirect_stderr=None, append_stdout=None, append_stderr=None):
     output = f"{os.getcwd()}\n"
-    write_output(output, redirect_stdout, redirect_stderr, append_stdout, append_stderr)
+    write_output(output, redirect_stdout or append_stdout, redirect_stderr or append_stderr)
 
 def execute_cd(args):
     if not args:
