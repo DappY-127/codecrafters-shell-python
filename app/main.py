@@ -81,13 +81,14 @@ def write_output(
         append_stderr if is_error else append_stdout if append_stdout else (redirect_stderr if is_error else redirect_stdout)
     )
 
-    mode = "a" if (is_error and append_stderr) or (not is_error and append_stdout) else "w"
     if target:
+        mode = "a" if (is_error and append_stderr) or (not is_error and append_stdout) else "w"
         try:
+            os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, mode) as file:
                 file.write(output)
-        except IOError as e:
-            sys.stderr.write(f"Error writing to file {target}: {e}\n")
+        except Exception as e:
+            sys.stderr.write(f"Error writing to {target}: {e}\n")
     else:
         if is_error:
             sys.stderr.write(output)
