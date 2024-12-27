@@ -6,6 +6,9 @@ import shlex
 BUILTIN_COMMANDS = {"exit", "echo", "type", "pwd", "cd"}
 
 def check_path(command_name):
+    if os.path.isabs(command_name) and os.access(command_name, os.X_OK):
+        return command_name
+
     paths = os.getenv("PATH", "").split(":")
     for path in paths:
         full_path = os.path.join(path, command_name)
@@ -102,19 +105,27 @@ def execute_external_program(command, args, output_file, error_file, append_stdo
     executable_path = check_path(command)
     if executable_path:
         try:
+            stdout = open(output_file, "a" if append_stdout else "w") if output_file else subprocess.PIPE
+            stderr = open(error_file, "a" if append_stderr else "w") if error_file else subprocess.PIPE
+
             with subprocess.Popen(
                 [executable_path, *args],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=stdout,
+                stderr=stderr,
                 text=True,
             ) as proc:
                 stdout_data, stderr_data = proc.communicate()
 
-                if stdout_data:
-                    write_output(stdout_data, output_file, error_file, append_stdout, append_stderr, is_error=False)
+                if stdout_data and not output_file:
+                    sys.stdout.write(stdout_data)
 
-                if stderr_data:
-                    write_output(stderr_data, output_file, error_file, append_stdout, append_stderr, is_error=True)
+                if stderr_data and not error_file:
+                    sys.stderr.write(stderr_data)
+
+            if output_file:
+                stdout.close()
+            if error_file:
+                stderr.close()
 
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
