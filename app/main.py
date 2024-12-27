@@ -143,6 +143,19 @@ def execute_external_program(
 ):
     executable_path = check_path(command)
     if executable_path:
+        if redirect_stdout and not os.path.exists(os.path.dirname(redirect_stdout)):
+            sys.stderr.write(f"{command}: cannot access '{redirect_stdout}': No such file or directory\n")
+            return
+        if redirect_stderr and not os.path.exists(os.path.dirname(redirect_stderr)):
+            sys.stderr.write(f"{command}: cannot access '{redirect_stderr}': No such file or directory\n")
+            return
+        if append_stdout and not os.path.exists(os.path.dirname(append_stdout)):
+            sys.stderr.write(f"{command}: cannot access '{append_stdout}': No such file or directory\n")
+            return
+        if append_stderr and not os.path.exists(os.path.dirname(append_stderr)):
+            sys.stderr.write(f"{command}: cannot access '{append_stderr}': No such file or directory\n")
+            return
+
         try:
             with subprocess.Popen(
                 [executable_path, *args],
