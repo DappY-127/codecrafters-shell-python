@@ -19,27 +19,25 @@ def check_path(command_name):
 def parse_command_and_args(raw_args):
     args = shlex.split(raw_args)
     command = args[0] if args else ""
-    output_file = None
-    error_file = None
-    append_stdout = False
-    append_stderr = False
+    output_file, error_file = None, None
+    append_stdout, append_stderr = False, False
 
-    if ">>" in args or "1>>" in args:
-        redirect_index = args.index(">>") if ">>" in args else args.index("1>>")
+    if ">>" in args:
+        redirect_index = args.index(">>")
         output_file = args[redirect_index + 1]
-        args = args[:redirect_index] + args[redirect_index + 2:]
         append_stdout = True
+        args = args[:redirect_index] + args[redirect_index + 2:]
 
-    elif ">" in args or "1>" in args:
-        redirect_index = args.index(">") if ">" in args else args.index("1>")
+    elif ">" in args:
+        redirect_index = args.index(">")
         output_file = args[redirect_index + 1]
         args = args[:redirect_index] + args[redirect_index + 2:]
 
     if "2>>" in args:
         redirect_index = args.index("2>>")
         error_file = args[redirect_index + 1]
-        args = args[:redirect_index] + args[redirect_index + 2:]
         append_stderr = True
+        args = args[:redirect_index] + args[redirect_index + 2:]
 
     elif "2>" in args:
         redirect_index = args.index("2>")
@@ -105,27 +103,18 @@ def execute_external_program(command, args, output_file, error_file, append_stdo
     executable_path = check_path(command)
     if executable_path:
         try:
-            stdout = open(output_file, "a" if append_stdout else "w") if output_file else subprocess.PIPE
-            stderr = open(error_file, "a" if append_stderr else "w") if error_file else subprocess.PIPE
-
             with subprocess.Popen(
                 [executable_path, *args],
-                stdout=stdout,
-                stderr=stderr,
+                stdout=(open(output_file, "a" if append_stdout else "w") if output_file else subprocess.PIPE),
+                stderr=(open(error_file, "a" if append_stderr else "w") if error_file else subprocess.PIPE),
                 text=True,
             ) as proc:
                 stdout_data, stderr_data = proc.communicate()
 
                 if stdout_data and not output_file:
                     sys.stdout.write(stdout_data)
-
                 if stderr_data and not error_file:
                     sys.stderr.write(stderr_data)
-
-            if output_file:
-                stdout.close()
-            if error_file:
-                stderr.close()
 
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
