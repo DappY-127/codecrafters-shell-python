@@ -99,6 +99,7 @@ def write_output(
 
     if target:
         try:
+            os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, mode) as file:
                 file.write(output)
         except IOError as e:
