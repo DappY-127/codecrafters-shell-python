@@ -68,7 +68,7 @@ def execute_exit(args):
 
 def execute_echo(args, output_file, error_file, append_stdout, append_stderr):
     output = " ".join(args) + "\n"
-    write_output(output, output_file, error_file, append_stdout, append_stderr)
+    write_output(output, output_file, append_stdout)
 
 def execute_type(args, output_file, error_file):
     output = []
@@ -81,11 +81,11 @@ def execute_type(args, output_file, error_file):
                 output.append(f"{name} is {path}\n")
             else:
                 output.append(f"{name}: not found\n")
-    write_output("".join(output), output_file, error_file, False, False)
+    write_output("".join(output), output_file, False)
 
 def execute_pwd(output_file, error_file, append_stdout, append_stderr):
     output = f"{os.getcwd()}\n"
-    write_output(output, output_file, error_file, append_stdout, append_stderr)
+    write_output(output, output_file, append_stdout)
 
 def execute_cd(args):
     if not args:
@@ -104,39 +104,34 @@ def execute_cd(args):
 def execute_external_program(command, args, output_file, error_file, append_stdout, append_stderr):
     executable_path = check_path(command)
     print(f"[DEBUG] Executable path: {executable_path}", file=sys.stderr)  # Logs
-    print(f"[DEBUG] Args: {args}", file=sys.stderr)  # logs
     if executable_path:
         try:
-            stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else None
-            stderr_target = open(error_file, "a" if append_stderr else "w") if error_file else None
-            
-            with subprocess.Popen(
-                [executable_path] + args,  # Використовуємо команду з аргументами
-                stdout=stdout_target or subprocess.PIPE,
-                stderr=stderr_target or subprocess.PIPE,
-                text=True,
-            ) as proc:
-                stdout_data, stderr_data = proc.communicate()
+            stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else subprocess.PIPE
+            stderr_target = open(error_file, "a" if append_stderr else "w") if error_file else subprocess.PIPE
 
-                # Записуємо вивід, якщо немає редиректу
-                if stdout_data and not stdout_target:
-                    sys.stdout.write(stdout_data)
-                if stderr_data and not stderr_target:
-                    sys.stderr.write(stderr_data)
+            result = subprocess.run(
+                [executable_path] + args,
+                stdout=stdout_target,
+                stderr=stderr_target,
+                text=True
+            )
+
+            if not output_file:
+                sys.stdout.write(result.stdout or "")
+            if not error_file:
+                sys.stderr.write(result.stderr or "")
 
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
         except Exception as e:
             sys.stderr.write(f"Error executing {command}: {e}\n")
         finally:
-            # Закриваємо дескриптори, якщо вони відкриті
-            if stdout_target:
+            if output_file:
                 stdout_target.close()
-            if stderr_target:
+            if error_file:
                 stderr_target.close()
     else:
         sys.stderr.write(f"{command}: command not found\n")
-
 
 def write_output(output, output_file, append_mode):
     mode = "a" if append_mode else "w"
