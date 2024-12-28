@@ -102,26 +102,32 @@ def execute_cd(args):
 def execute_external_program(command, args, output_file, error_file, append_stdout, append_stderr):
     executable_path = check_path(command)
     if executable_path:
-        stdout_target = None
-        stderr_target = None
         try:
-            if output_file:
-                stdout_target = open(output_file, "a" if append_stdout else "w")
-            if error_file:
-                stderr_target = open(error_file, "a" if append_stderr else "w")
+            stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else None
+            stderr_target = open(error_file, "a" if append_stderr else "w") if error_file else None
             
-            with subprocess.Popen(
-                [executable_path] + args,  
-                stdout=stdout_target or subprocess.PIPE,
-                stderr=stderr_target or subprocess.PIPE,
-                text=True,
-            ) as proc:
-                stdout_data, stderr_data = proc.communicate()
+            process = subprocess.Popen(
+                [executable_path] + args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            stdout_data, stderr_data = process.communicate()
 
-                if stdout_data and not stdout_target:
+            if stdout_data:
+                if stdout_target:
+                    stdout_target.write(stdout_data)
+                else:
                     sys.stdout.write(stdout_data)
-                if stderr_data and not stderr_target:
+            if stderr_data:
+                if stderr_target:
+                    stderr_target.write(stderr_data)
+                else:
                     sys.stderr.write(stderr_data)
+                    
+            if process.returncode != 0 and not stderr_target:
+                sys.stderr.write(f"Command '{command}' exited with code {process.returncode}\n")
 
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
