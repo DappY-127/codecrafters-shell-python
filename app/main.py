@@ -72,13 +72,7 @@ def execute_exit(args):
     sys.exit(status_code)
 
 def execute_echo(args, output_file, error_file, append_stdout, append_stderr):
-    filtered_args = []
-    for arg in args:
-        if arg in {">", ">>", "2>", "2>>"}:
-            break
-        filtered_args.append(arg)
-    
-    output = " ".join(filtered_args) + "\n"
+    output = " ".join(args) + "\n"
     write_output(output, output_file, append_stdout)
 
 def execute_type(args, output_file, error_file):
