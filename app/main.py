@@ -152,16 +152,13 @@ def write_output(output, output_file, append_mode):
     
     if output_file:
         output_dir = os.path.dirname(output_file)
-        print(f"Debug: Checking if directory exists: {output_dir}")
         if output_dir and not os.path.exists(output_dir):
-            print(f"Debug: Directory {output_dir} does not exist, creating it.")
             try:
                 os.makedirs(output_dir)
             except Exception as e:
                 sys.stderr.write(f"Error creating directory {output_dir}: {e}\n")
                 return  # Stop further processing if directory cannot be created
 
-        print(f"Debug: Attempting to write to {output_file} in mode {mode}")
         try:
             with open(output_file, mode) as f:
                 f.write(output)
