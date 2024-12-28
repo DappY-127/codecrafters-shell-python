@@ -102,19 +102,22 @@ def execute_cd(args):
 def execute_external_program(command, args, output_file, error_file, append_stdout, append_stderr):
     executable_path = check_path(command)
     if executable_path:
+        stdout_target = None
+        stderr_target = None
         try:
-            stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else None
-            stderr_target = open(error_file, "a" if append_stderr else "w") if error_file else None
+            if output_file:
+                stdout_target = open(output_file, "a" if append_stdout else "w")
+            if error_file:
+                stderr_target = open(error_file, "a" if append_stderr else "w")
             
             with subprocess.Popen(
-                [executable_path] + args,  # Використовуємо команду з аргументами
+                [executable_path] + args,  
                 stdout=stdout_target or subprocess.PIPE,
                 stderr=stderr_target or subprocess.PIPE,
                 text=True,
             ) as proc:
                 stdout_data, stderr_data = proc.communicate()
 
-                # Записуємо вивід, якщо немає редиректу
                 if stdout_data and not stdout_target:
                     sys.stdout.write(stdout_data)
                 if stderr_data and not stderr_target:
@@ -125,7 +128,6 @@ def execute_external_program(command, args, output_file, error_file, append_stdo
         except Exception as e:
             sys.stderr.write(f"Error executing {command}: {e}\n")
         finally:
-            # Закриваємо дескриптори, якщо вони відкриті
             if stdout_target:
                 stdout_target.close()
             if stderr_target:
