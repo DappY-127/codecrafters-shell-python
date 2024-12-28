@@ -103,13 +103,10 @@ def execute_external_program(command, args, output_file, error_file, append_stdo
     executable_path = check_path(command)
     if executable_path:
         try:
-            stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else subprocess.PIPE
-            stderr_target = open(error_file, "a" if append_stderr else "w") if error_file else subprocess.PIPE
-
             with subprocess.Popen(
                 [executable_path, *args],
-                stdout=stdout_target,
-                stderr=stderr_target,
+                stdout=(open(output_file, "a" if append_stdout else "w") if output_file else subprocess.PIPE),
+                stderr=(open(error_file, "a" if append_stderr else "w") if error_file else subprocess.PIPE),
                 text=True,
             ) as proc:
                 stdout_data, stderr_data = proc.communicate()
@@ -126,17 +123,16 @@ def execute_external_program(command, args, output_file, error_file, append_stdo
     else:
         sys.stderr.write(f"{command}: command not found\n")
 
-def write_output(output, output_file, error_file, append_stdout, append_stderr, is_error=False):
-    target = error_file if is_error else output_file
-    mode = "a" if (append_stdout or append_stderr) else "w"
-    if target:
+def write_output(output, output_file, append_mode):
+    mode = "a" if append_mode else "w"
+    if output_file:
         try:
-            with open(target, mode) as f:
+            with open(output_file, mode) as f:
                 f.write(output)
         except IOError as e:
-            sys.stderr.write(f"Error writing to file {target}: {e}\n")
+            sys.stderr.write(f"Error writing to file {output_file}: {e}\n")
     else:
-        (sys.stderr if is_error else sys.stdout).write(output)
+        sys.stdout.write(output)
 
 def main():
     while True:
