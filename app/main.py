@@ -112,29 +112,27 @@ def execute_external_program(command, args, output_file, error_file, append_stdo
         try:
             stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else None
             stderr_target = open(error_file, "a" if append_stderr else "w") if error_file else None
-            
+
             process = subprocess.Popen(
                 [executable_path] + args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=stdout_target if output_file else subprocess.PIPE,
+                stderr=stderr_target if error_file else subprocess.PIPE,
                 text=True
             )
-            
+
             stdout_data, stderr_data = process.communicate()
 
             if stdout_data:
-                if stdout_target:
+                if stdout_target: 
                     stdout_target.write(stdout_data)
-                else:
+                else:  
                     sys.stdout.write(stdout_data)
+
             if stderr_data:
-                if stderr_target:
+                if stderr_target:  
                     stderr_target.write(stderr_data)
-                else:
+                else:  
                     sys.stderr.write(stderr_data)
-                    
-            if process.returncode != 0 and not stderr_target:
-                sys.stderr.write(f"Command '{command}' exited with code {process.returncode}\n")
 
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
@@ -145,6 +143,7 @@ def execute_external_program(command, args, output_file, error_file, append_stdo
                 stdout_target.close()
             if stderr_target:
                 stderr_target.close()
+
     else:
         sys.stderr.write(f"{command}: command not found\n")
 
