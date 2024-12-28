@@ -22,29 +22,36 @@ def parse_command_and_args(raw_args):
     output_file, error_file = None, None
     append_stdout, append_stderr = False, False
 
-    if ">>" in args:
-        redirect_index = args.index(">>")
-        output_file = args[redirect_index + 1]
-        append_stdout = True
-        args = args[:redirect_index] + args[redirect_index + 2:]
+    processed_args = []
+    skip_next = False
 
-    elif ">" in args:
-        redirect_index = args.index(">")
-        output_file = args[redirect_index + 1]
-        args = args[:redirect_index] + args[redirect_index + 2:]
+    for i, arg in enumerate(args):
+        if skip_next:
+            skip_next = False
+            continue
 
-    if "2>>" in args:
-        redirect_index = args.index("2>>")
-        error_file = args[redirect_index + 1]
-        append_stderr = True
-        args = args[:redirect_index] + args[redirect_index + 2:]
+        if arg == ">>":
+            if i + 1 < len(args):
+                output_file = args[i + 1]
+                append_stdout = True
+                skip_next = True
+        elif arg == ">":
+            if i + 1 < len(args):
+                output_file = args[i + 1]
+                skip_next = True
+        elif arg == "2>>":
+            if i + 1 < len(args):
+                error_file = args[i + 1]
+                append_stderr = True
+                skip_next = True
+        elif arg == "2>":
+            if i + 1 < len(args):
+                error_file = args[i + 1]
+                skip_next = True
+        else:
+            processed_args.append(arg)
 
-    elif "2>" in args:
-        redirect_index = args.index("2>")
-        error_file = args[redirect_index + 1]
-        args = args[:redirect_index] + args[redirect_index + 2:]
-
-    return command, args, output_file, error_file, append_stdout, append_stderr
+    return processed_args[0] if processed_args else "", processed_args[1:], output_file, error_file, append_stdout, append_stderr
 
 def handle_command(command, args, output_file, error_file, append_stdout, append_stderr):
     if command == "exit":
