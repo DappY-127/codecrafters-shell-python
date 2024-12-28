@@ -30,12 +30,12 @@ def parse_command_and_args(raw_args):
             skip_next = False
             continue
 
-        if arg == ">>":
+        if arg in {"1>>", ">>"}:
             if i + 1 < len(args):
                 output_file = args[i + 1]
                 append_stdout = True
                 skip_next = True
-        elif arg == ">":
+        elif arg in {"1>", ">"}:
             if i + 1 < len(args):
                 output_file = args[i + 1]
                 skip_next = True
