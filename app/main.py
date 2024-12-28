@@ -13,11 +13,13 @@ def check_path(command_name):
     for path in paths:
         full_path = os.path.join(path, command_name)
         if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+            print(f"[DEBUG] Found path: {full_path}", file=sys.stderr)  # simple logs
             return full_path
     return None
 
 def parse_command_and_args(raw_args):
     args = shlex.split(raw_args)
+    print(f"[DEBUG] Parsed args: {args}", file=sys.stderr)  # simple logs, remove later
     command = args[0] if args else ""
     output_file, error_file = None, None
     append_stdout, append_stderr = False, False
@@ -101,6 +103,8 @@ def execute_cd(args):
 
 def execute_external_program(command, args, output_file, error_file, append_stdout, append_stderr):
     executable_path = check_path(command)
+    print(f"[DEBUG] Executable path: {executable_path}", file=sys.stderr)  # Logs
+    print(f"[DEBUG] Args: {args}", file=sys.stderr)  # logs
     if executable_path:
         try:
             stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else subprocess.PIPE
