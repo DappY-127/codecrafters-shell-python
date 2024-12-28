@@ -17,41 +17,50 @@ def check_path(command_name):
     return None
 
 def parse_command_and_args(raw_args):
+    # Split the raw arguments using shlex to handle quotes and spaces properly
     args = shlex.split(raw_args)
+    
     command = args[0] if args else ""
-    output_file, error_file = None, None
-    append_stdout, append_stderr = False, False
+    
+    # Variables for redirection files
+    redirect_stdout = None
+    redirect_stderr = None
+    append_stdout = None  # For appending stdout
 
-    processed_args = []
-    skip_next = False
-
-    for i, arg in enumerate(args):
-        if skip_next:
-            skip_next = False
-            continue
-
-        if arg in {"1>>", ">>"}:
+    i = 0
+    while i < len(args):
+        # Handle stdout redirection
+        if args[i] in {">", "1>"}:
             if i + 1 < len(args):
-                output_file = args[i + 1]
-                append_stdout = True
-                skip_next = True
-        elif arg in {"1>", ">"}:
+                redirect_stdout = args[i + 1]
+                del args[i:i + 2]  # Remove the redirection operator and file
+            else:
+                break
+        # Handle append stdout redirection
+        elif args[i] in {">>", "1>>"}:
             if i + 1 < len(args):
-                output_file = args[i + 1]
-                skip_next = True
-        elif arg == "2>>":
+                append_stdout = args[i + 1]
+                del args[i:i + 2]  # Remove the redirection operator and file
+            else:
+                break
+        # Handle stderr redirection
+        elif args[i] == "2>":
             if i + 1 < len(args):
-                error_file = args[i + 1]
-                append_stderr = True
-                skip_next = True
-        elif arg == "2>":
+                redirect_stderr = args[i + 1]
+                del args[i:i + 2]  # Remove the redirection operator and file
+            else:
+                break
+        # Handle append stderr redirection
+        elif args[i] == "2>>":
             if i + 1 < len(args):
-                error_file = args[i + 1]
-                skip_next = True
+                append_stderr = args[i + 1]
+                del args[i:i + 2]  # Remove the redirection operator and file
+            else:
+                break
         else:
-            processed_args.append(arg)
+            i += 1 
 
-    return processed_args[0] if processed_args else "", processed_args[1:], output_file, error_file, append_stdout, append_stderr
+    return command, args[1:], redirect_stdout, redirect_stderr, append_stdout, append_stderr
 
 def handle_command(command, args, output_file, error_file, append_stdout, append_stderr):
     if command == "exit":
