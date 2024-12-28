@@ -107,28 +107,36 @@ def execute_external_program(command, args, output_file, error_file, append_stdo
     print(f"[DEBUG] Args: {args}", file=sys.stderr)  # logs
     if executable_path:
         try:
-            stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else subprocess.PIPE
-            stderr_target = open(error_file, "a" if append_stderr else "w") if error_file else subprocess.PIPE
+            stdout_target = open(output_file, "a" if append_stdout else "w") if output_file else None
+            stderr_target = open(error_file, "a" if append_stderr else "w") if error_file else None
             
             with subprocess.Popen(
-                [executable_path, *args],
-                stdout=stdout_target,
-                stderr=stderr_target,
+                [executable_path] + args,  # Використовуємо команду з аргументами
+                stdout=stdout_target or subprocess.PIPE,
+                stderr=stderr_target or subprocess.PIPE,
                 text=True,
             ) as proc:
                 stdout_data, stderr_data = proc.communicate()
 
-                if stdout_data and not output_file:
+                # Записуємо вивід, якщо немає редиректу
+                if stdout_data and not stdout_target:
                     sys.stdout.write(stdout_data)
-                if stderr_data and not error_file:
+                if stderr_data and not stderr_target:
                     sys.stderr.write(stderr_data)
 
         except FileNotFoundError:
             sys.stderr.write(f"{command}: command not found\n")
         except Exception as e:
             sys.stderr.write(f"Error executing {command}: {e}\n")
+        finally:
+            # Закриваємо дескриптори, якщо вони відкриті
+            if stdout_target:
+                stdout_target.close()
+            if stderr_target:
+                stderr_target.close()
     else:
         sys.stderr.write(f"{command}: command not found\n")
+
 
 def write_output(output, output_file, append_mode):
     mode = "a" if append_mode else "w"
