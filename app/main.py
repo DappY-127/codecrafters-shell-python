@@ -73,10 +73,7 @@ def execute_exit(args):
 
 def execute_echo(args, output_file, error_file, append_stdout, append_stderr):
     output = " ".join(args) + "\n"
-    write_output(output, output_file, append_stdout)
-
-    # if error_file:
-    #     write_output(output, error_file, append_stderr)
+    write_output(output, output_file, error_file, append_stdout, append_stderr)
 
 def execute_type(args, output_file, error_file):
     output = []
