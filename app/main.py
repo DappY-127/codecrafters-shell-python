@@ -73,7 +73,14 @@ def execute_exit(args):
 
 def execute_echo(args, output_file, error_file, append_stdout, append_stderr):
     output = " ".join(args) + "\n"
-    write_output(output, output_file, error_file, append_stdout, append_stderr)
+    
+    if output_file:
+        write_output(output, output_file, append_stdout)
+    else:
+        sys.stdout.write(output)
+
+    if error_file:
+        write_output(output, error_file, append_stderr)
 
 def execute_type(args, output_file, error_file):
     output = []
@@ -154,10 +161,10 @@ def write_output(output, output_file, append_mode):
         output_dir = os.path.dirname(output_file)
         if output_dir and not os.path.exists(output_dir):
             try:
-                os.makedirs(output_dir)
+                os.makedirs(output_dir, exist_ok=True)
             except Exception as e:
                 sys.stderr.write(f"Error creating directory {output_dir}: {e}\n")
-                return  # Stop further processing if directory cannot be created
+                return
 
         try:
             with open(output_file, mode) as f:
